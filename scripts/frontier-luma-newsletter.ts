@@ -103,7 +103,7 @@ function loadEnvFile() {
     const idx = trimmed.indexOf("=");
     const key = trimmed.slice(0, idx).trim();
     const value = trimmed.slice(idx + 1).trim().replace(/^"|"$/g, "");
-    if (!Object.hasOwn(process.env, key)) {
+    if (!Object.prototype.hasOwnProperty.call(process.env, key)) {
       process.env[key] = value;
     }
   }
