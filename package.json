@@ -1,0 +1,15 @@
+{
+  "name": "frontier-tower-newsletter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx tsx scripts/frontier-luma-newsletter.ts",
+    "create": "npx tsx scripts/frontier-luma-newsletter.ts --create-only",
+    "finalize": "npx tsx scripts/frontier-luma-newsletter.ts --finalize-only",
+    "run": "npx tsx scripts/frontier-luma-newsletter.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.2"
+  }
+}

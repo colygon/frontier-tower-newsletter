@@ -1,0 +1,19 @@
+[
+  {
+    "id": "lead-101",
+    "name": "Frontier Community Team",
+    "email": "community@frontiertower.xyz",
+    "telegramId": "-1001234567890",
+    "topics": ["AI", "Crypto"],
+    "status": "active",
+    "allowEmail": true,
+    "allowTelegram": true
+  },
+  {
+    "id": "lead-102",
+    "name": "Bio / Neuro Partner",
+    "email": "neuro@frontiertower.xyz",
+    "topics": ["Neuro tech"],
+    "status": "active"
+  }
+]
