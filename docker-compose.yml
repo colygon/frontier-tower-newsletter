@@ -1,0 +1,110 @@
+# Local development stack
+# Production uses Nebius managed services (see deploy/nebius-deploy.sh)
+
+services:
+  # ---------- Core Platform ----------
+  platform:
+    build: .
+    container_name: eventsy-platform
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgres://eventsy:eventsy@postgres:5432/eventsy
+      TWENTY_BASE_URL: http://twenty:3000
+      HI_EVENTS_BASE_URL: http://hi-events:8080
+      OPENCLAW_BASE_URL: http://openclaw:3100
+      DATA_DIR: /app/data
+    volumes:
+      - platform-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  # ---------- PostgreSQL ----------
+  postgres:
+    image: postgres:16-alpine
+    container_name: eventsy-postgres
+    environment:
+      POSTGRES_USER: eventsy
+      POSTGRES_PASSWORD: eventsy
+      POSTGRES_DB: eventsy
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventsy"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------- Twenty CRM ----------
+  twenty:
+    image: twentycrm/twenty:latest
+    container_name: eventsy-twenty
+    environment:
+      PG_DATABASE_URL: postgres://eventsy:eventsy@postgres:5432/twenty
+      FRONT_BASE_URL: http://localhost:3001
+      SERVER_URL: http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+
+  # ---------- Hi.Events ----------
+  hi-events:
+    image: daveearley/hi.events-all-in-one:latest
+    container_name: eventsy-hi-events
+    environment:
+      APP_URL: http://localhost:8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: hievents
+      DB_USERNAME: eventsy
+      DB_PASSWORD: eventsy
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  # ---------- OpenClaw ----------
+  openclaw:
+    image: ghcr.io/opencolin/openclaw-serverless:latest
+    container_name: eventsy-openclaw
+    environment:
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_API_KEY:-changeme}
+    ports:
+      - "3100:8080"
+      - "18789:18789"
+    restart: unless-stopped
+
+  # ---------- Caddy (reverse proxy + auto-SSL) ----------
+  caddy:
+    image: caddy:2-alpine
+    container_name: eventsy-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - platform
+      - twenty
+      - hi-events
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  platform-data:
+  caddy-data:
+  caddy-config:

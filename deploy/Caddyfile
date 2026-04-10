@@ -1,0 +1,32 @@
+# Caddyfile — reverse proxy for all Eventsy services
+# Replace {$DOMAIN} with your actual domain or use localhost for dev
+
+{$DOMAIN:localhost} {
+	# Platform API
+	handle /api/* {
+		reverse_proxy platform:3000
+	}
+
+	# Twenty CRM
+	handle /crm/* {
+		uri strip_prefix /crm
+		reverse_proxy twenty:3000
+	}
+
+	# Hi.Events — event pages
+	handle /events/* {
+		uri strip_prefix /events
+		reverse_proxy hi-events:8080
+	}
+
+	# OpenClaw dashboard
+	handle /openclaw/* {
+		uri strip_prefix /openclaw
+		reverse_proxy openclaw:18789
+	}
+
+	# Default: platform
+	handle {
+		reverse_proxy platform:3000
+	}
+}
