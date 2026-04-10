@@ -106,19 +106,30 @@ fi
 
 # --- Step 4: PostgreSQL (Nebius Managed) ---
 echo ""
-echo "[4/6] PostgreSQL setup..."
-echo "  NOTE: Create a Nebius Managed PostgreSQL instance via the console:"
-echo "    - Name: ${APP_NAME}-db"
-echo "    - Version: 16"
-echo "    - Network: ${APP_NAME}-net"
-echo "    - Databases: eventsy, twenty, hievents"
-echo "    - User: eventsy"
-echo ""
-echo "  Set the connection string as NEBIUS_PG_URL when deploying endpoints."
-echo "  Example: postgres://eventsy:<password>@<pg-host>:5432/eventsy"
-echo ""
+echo "[4/6] PostgreSQL — Nebius Managed PostgreSQL"
 
-NEBIUS_PG_URL="${NEBIUS_PG_URL:-postgres://eventsy:changeme@localhost:5432/eventsy}"
+# Nebius Managed PostgreSQL connection details
+PG_CLUSTER_ID="postgresql-e00c9be8vdp8rx0dn3"
+PG_HOST_PRIVATE="private-rw.postgresql-e00c9be8vdp8rx0dn3.backbone-e00qegmfj4yxpj4fgj.msp.eu-north1.nebius.cloud"
+PG_HOST_PUBLIC="public-rw.postgresql-e00c9be8vdp8rx0dn3.backbone-e00qegmfj4yxpj4fgj.msp.eu-north1.nebius.cloud"
+PG_USER="${NEBIUS_PG_USER:-eventsy}"
+PG_PASSWORD="${NEBIUS_PG_PASSWORD:?Set NEBIUS_PG_PASSWORD}"
+PG_PORT="${NEBIUS_PG_PORT:-5432}"
+
+# Use private endpoint for service-to-service (within Nebius network)
+NEBIUS_PG_URL="postgres://${PG_USER}:${PG_PASSWORD}@${PG_HOST_PRIVATE}:${PG_PORT}/eventsy?sslmode=require"
+NEBIUS_PG_URL_TWENTY="postgres://${PG_USER}:${PG_PASSWORD}@${PG_HOST_PRIVATE}:${PG_PORT}/twenty?sslmode=require"
+NEBIUS_PG_URL_HIEVENTS="postgres://${PG_USER}:${PG_PASSWORD}@${PG_HOST_PRIVATE}:${PG_PORT}/hievents?sslmode=require"
+
+echo "  Cluster:  $PG_CLUSTER_ID"
+echo "  Private:  $PG_HOST_PRIVATE"
+echo "  Public:   $PG_HOST_PUBLIC"
+echo "  User:     $PG_USER"
+echo "  Databases: eventsy, twenty, hievents"
+echo ""
+echo "  Ensure these databases exist. Connect via public endpoint to create them:"
+echo "    psql \"postgres://${PG_USER}:***@${PG_HOST_PUBLIC}:${PG_PORT}/postgres?sslmode=require\""
+echo "    CREATE DATABASE eventsy; CREATE DATABASE twenty; CREATE DATABASE hievents;"
 
 # --- Step 5: Deploy Serverless Endpoints ---
 echo ""
@@ -135,6 +146,7 @@ nebius ai endpoint create \
   --container-port 3000 \
   --disk-size 10 \
   --env "DATABASE_URL=${NEBIUS_PG_URL}" \
+  --env "NEBIUS_PG_HOST=${PG_HOST_PRIVATE}" \
   --env "TWENTY_BASE_URL=http://${APP_NAME}-twenty:3000" \
   --env "HI_EVENTS_BASE_URL=http://${APP_NAME}-hievents:8080" \
   --env "OPENCLAW_BASE_URL=http://${APP_NAME}-openclaw:8080" \
@@ -153,7 +165,7 @@ nebius ai endpoint create \
   --preset "2vcpu-8gb" \
   --container-port 3000 \
   --disk-size 20 \
-  --env "PG_DATABASE_URL=${NEBIUS_PG_URL/eventsy/twenty}" \
+  --env "PG_DATABASE_URL=${NEBIUS_PG_URL_TWENTY}" \
   --env "SERVER_URL=https://crm.${DOMAIN:-eventsy.app}" \
   --public \
   --format json | jq '.'
@@ -168,11 +180,13 @@ nebius ai endpoint create \
   --preset "1vcpu-4gb" \
   --container-port 8080 \
   --disk-size 10 \
-  --env "DB_HOST=$(echo $NEBIUS_PG_URL | sed 's|.*@\(.*\):.*|\1|')" \
-  --env "DB_PORT=5432" \
+  --env "DB_HOST=${PG_HOST_PRIVATE}" \
+  --env "DB_PORT=${PG_PORT}" \
   --env "DB_DATABASE=hievents" \
-  --env "DB_USERNAME=eventsy" \
-  --env "DB_PASSWORD=$(echo $NEBIUS_PG_URL | sed 's|.*://.*:\(.*\)@.*|\1|')" \
+  --env "DB_USERNAME=${PG_USER}" \
+  --env "DB_PASSWORD=${PG_PASSWORD}" \
+  --env "DB_CONNECTION=pgsql" \
+  --env "DB_SSLMODE=require" \
   --public \
   --format json | jq '.'
 
