@@ -1,12 +1,22 @@
 {
   "name": "frontier-tower-newsletter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
+  "description": "Luma SaaS Integration Platform — event marketing automation with contact enrichment, CRM integration, and a 200k+ attendee network",
   "scripts": {
-    "dev": "npx tsx scripts/frontier-luma-newsletter.ts",
-    "create": "npx tsx scripts/frontier-luma-newsletter.ts --create-only",
-    "finalize": "npx tsx scripts/frontier-luma-newsletter.ts --finalize-only",
-    "run": "npx tsx scripts/frontier-luma-newsletter.ts"
+    "platform": "npx tsx src/index.ts",
+    "sync": "npx tsx src/index.ts --sync",
+    "enrich": "npx tsx src/index.ts --enrich",
+    "crm-sync": "npx tsx src/index.ts --crm-sync",
+    "cost-report": "npx tsx src/index.ts --cost-report",
+    "network-stats": "npx tsx src/index.ts --network-stats",
+    "ambassador-stats": "npx tsx src/index.ts --ambassador-stats",
+    "health": "npx tsx src/index.ts --health",
+    "newsletter:dev": "npx tsx scripts/frontier-luma-newsletter.ts",
+    "newsletter:create": "npx tsx scripts/frontier-luma-newsletter.ts --create-only",
+    "newsletter:finalize": "npx tsx scripts/frontier-luma-newsletter.ts --finalize-only",
+    "newsletter:run": "npx tsx scripts/frontier-luma-newsletter.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",
